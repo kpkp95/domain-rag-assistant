@@ -283,7 +283,12 @@
         });
 
         $("#clearChat").on("click", function () {
-          $("#messageFormeight").html("");
+          $.ajax({
+            type: "POST",
+            url: "/clear",
+          }).done(function () {
+            $("#messageFormeight").html("");
+          });
         });
       });
     </script>

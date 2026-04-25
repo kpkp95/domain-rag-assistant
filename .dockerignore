@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 
+# Git files
+.git
+.gitignore
+
 # Python cache files
 __pycache__/
 *.py[cod]
@@ -16,17 +20,20 @@ ENV/
 medbot/
 mediChatbot/
 
-# Jupyter Notebook checkpoints
+# Jupyter / research files
 .ipynb_checkpoints/
+research/
 
-# Data files - do not push books/PDFs to GitHub
-data/**/*.pdf
-data/**/*.txt
-data/**/*.docx
-data/**/*.csv
-data/**/*.json
-data/**/*.xlsx
-!data/**/.gitkeep
+# Data files - do not copy books/PDFs into Docker image
+data/
+*.pdf
+*.txt
+*.docx
+*.csv
+*.xlsx
+
+# Evaluation output
+evaluation/results.csv
 
 # Model/vector database files
 *.pkl

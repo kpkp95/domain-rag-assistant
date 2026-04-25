@@ -27,10 +27,8 @@ research/
 # Data files - do not copy books/PDFs into Docker image
 data/
 *.pdf
-
 *.docx
-*.csv
-*.xlsx
+
 
 # Evaluation output
 evaluation/results.csv

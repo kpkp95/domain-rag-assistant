@@ -27,7 +27,7 @@ research/
 # Data files - do not copy books/PDFs into Docker image
 data/
 *.pdf
-*.txt
+
 *.docx
 *.csv
 *.xlsx

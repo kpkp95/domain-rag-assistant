@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Domain RAG Assistant</title>
+
+    <!-- Bootstrap -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.5.0/css/all.css"
+    />
+
+    <!-- Custom CSS -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+
+  <body>
+    <div class="container-fluid app-container">
+      <div class="row justify-content-center h-100">
+        <div class="col-md-9 col-xl-7 chat">
+          <div class="card chat-card">
+            <!-- Header -->
+            <div class="card-header chat-header">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                  <div class="img_cont">
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+                      class="rounded-circle user_img"
+                      alt="Assistant Icon"
+                    />
+                    <span class="online_icon"></span>
+                  </div>
+
+                  <div class="user_info ml-3">
+                    <span>Domain RAG Assistant</span>
+                    <p>Ask questions from your uploaded knowledge base</p>
+                  </div>
+                </div>
+
+                <button id="clearChat" class="btn btn-sm btn-outline-light">
+                  Clear Chat
+                </button>
+              </div>
+            </div>
+
+            <!-- Domain Selector -->
+            <div class="domain-bar">
+              <label for="domainSelect">Knowledge Base:</label>
+              <select id="domainSelect" class="form-control form-control-sm">
+                <option value="medical" selected>Medical</option>
+                <option value="machine_learning">Machine Learning</option>
+                <option value="llm">LLM</option>
+              </select>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="disclaimer-box">
+              <strong>Note:</strong>
+              This assistant provides document-based educational information
+              only. It does not replace professional medical, legal, financial,
+              or expert advice.
+            </div>
+
+            <!-- Chat Body -->
+            <div id="messageFormeight" class="card-body msg_card_body">
+              <div class="d-flex justify-content-start mb-4">
+                <div class="img_cont_msg">
+                  <img
+                    src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+                    class="rounded-circle user_img_msg"
+                    alt="Bot"
+                  />
+                </div>
+
+                <div class="msg_cotainer">
+                  Hello! I can answer questions using your selected document
+                  knowledge base. Ask me something like: <br />
+                  <strong>“What is acne?”</strong>
+                  <span class="msg_time">Now</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer Input -->
+            <div class="card-footer chat-footer">
+              <form id="messageArea" class="input-group">
+                <input
+                  type="text"
+                  id="text"
+                  name="msg"
+                  placeholder="Type your question..."
+                  autocomplete="off"
+                  class="form-control type_msg"
+                  required
+                />
+
+                <div class="input-group-append">
+                  <button
+                    type="submit"
+                    id="send"
+                    class="input-group-text send_btn"
+                  >
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <script>
+      $(document).ready(function () {
+        function getCurrentTime() {
+          const date = new Date();
+          let hour = date.getHours();
+          let minute = date.getMinutes();
+
+          if (minute < 10) {
+            minute = "0" + minute;
+          }
+
+          return hour + ":" + minute;
+        }
+
+        function scrollToBottom() {
+          const chatBody = $("#messageFormeight");
+          chatBody.scrollTop(chatBody[0].scrollHeight);
+        }
+
+        function escapeHtml(text) {
+          return $("<div>").text(text).html();
+        }
+
+        $("#messageArea").on("submit", function (event) {
+          event.preventDefault();
+
+          const str_time = getCurrentTime();
+          const rawText = $("#text").val().trim();
+          const selectedDomain = $("#domainSelect").val();
+
+          if (!rawText) {
+            return;
+          }
+
+          const safeUserText = escapeHtml(rawText);
+
+          const userHtml = `
+                    <div class="d-flex justify-content-end mb-4">
+                        <div class="msg_cotainer_send">
+                            ${safeUserText}
+                            <span class="msg_time_send">${str_time}</span>
+                        </div>
+                        <div class="img_cont_msg">
+                            <img
+                                src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                                class="rounded-circle user_img_msg"
+                                alt="User"
+                            >
+                        </div>
+                    </div>
+                `;
+
+          $("#text").val("");
+          $("#messageFormeight").append(userHtml);
+          scrollToBottom();
+
+          const loadingHtml = `
+                    <div id="loadingMessage" class="d-flex justify-content-start mb-4">
+                        <div class="img_cont_msg">
+                            <img
+                                src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+                                class="rounded-circle user_img_msg"
+                                alt="Bot"
+                            >
+                        </div>
+                        <div class="msg_cotainer">
+                            Thinking...
+                            <span class="msg_time">${str_time}</span>
+                        </div>
+                    </div>
+                `;
+
+          $("#messageFormeight").append(loadingHtml);
+          scrollToBottom();
+
+          $.ajax({
+            data: {
+              msg: rawText,
+              domain: selectedDomain,
+            },
+            type: "POST",
+            url: "/get",
+          })
+            .done(function (data) {
+              $("#loadingMessage").remove();
+
+              let answer = "";
+              let sourcesHtml = "";
+
+              if (typeof data === "object") {
+                answer = data.answer || "No answer returned.";
+
+                if (data.sources && data.sources.length > 0) {
+                  sourcesHtml += `<div class="sources_box"><strong>Sources:</strong><ul>`;
+
+                  data.sources.forEach(function (source) {
+                    sourcesHtml += `
+                                    <li>
+                                        ${escapeHtml(source.source)}
+                                        — page ${source.page}
+                                        — chunk ${source.chunk_id}
+                                    </li>
+                                `;
+                  });
+
+                  sourcesHtml += `</ul></div>`;
+                }
+              } else {
+                answer = data;
+              }
+
+              const safeAnswer = escapeHtml(answer).replace(/\n/g, "<br>");
+
+              const botHtml = `
+                        <div class="d-flex justify-content-start mb-4">
+                            <div class="img_cont_msg">
+                                <img
+                                    src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+                                    class="rounded-circle user_img_msg"
+                                    alt="Bot"
+                                >
+                            </div>
+                            <div class="msg_cotainer">
+                                ${safeAnswer}
+                                ${sourcesHtml}
+                                <span class="msg_time">${str_time}</span>
+                            </div>
+                        </div>
+                    `;
+
+              $("#messageFormeight").append(botHtml);
+              scrollToBottom();
+            })
+            .fail(function () {
+              $("#loadingMessage").remove();
+
+              const errorHtml = `
+                        <div class="d-flex justify-content-start mb-4">
+                            <div class="img_cont_msg">
+                                <img
+                                    src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+                                    class="rounded-circle user_img_msg"
+                                    alt="Bot"
+                                >
+                            </div>
+                            <div class="msg_cotainer error_msg">
+                                Sorry, something went wrong. Please try again.
+                                <span class="msg_time">${str_time}</span>
+                            </div>
+                        </div>
+                    `;
+
+              $("#messageFormeight").append(errorHtml);
+              scrollToBottom();
+            });
+        });
+
+        $("#clearChat").on("click", function () {
+          $("#messageFormeight").html("");
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,14 +1,40 @@
 from typing import List
 from pathlib import Path
+import re
 
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 
+
+def clean_text(text) -> str:
+    """
+    Convert text to a clean string and remove problematic Unicode/control characters
+    that can break embedding tokenizers.
+    """
+    if text is None:
+        return ""
+
+    text = str(text)
+
+    # Remove invalid surrogate unicode characters such as \ud835
+    text = text.encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
+
+    # Remove control characters except newline and tab
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", " ", text)
+
+    # Normalize whitespace
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text.strip()
+
+
 def load_pdf_files(data_path: str) -> List[Document]:
     """
     Load all PDF files from a given folder.
+    This supports multiple books/PDFs inside the same domain folder.
     """
     loader = DirectoryLoader(
         data_path,
@@ -23,13 +49,19 @@ def load_pdf_files(data_path: str) -> List[Document]:
 def filter_to_minimal_docs(docs: List[Document], domain: str) -> List[Document]:
     """
     Keep page content and useful metadata for citations and domain filtering.
+    Removes empty or invalid pages.
     """
     minimal_docs: List[Document] = []
 
     for doc in docs:
+        content = clean_text(doc.page_content)
+
+        if not content:
+            continue
+
         minimal_docs.append(
             Document(
-                page_content=doc.page_content,
+                page_content=content,
                 metadata={
                     "source": doc.metadata.get("source"),
                     "page": doc.metadata.get("page"),
@@ -44,6 +76,7 @@ def filter_to_minimal_docs(docs: List[Document], domain: str) -> List[Document]:
 def text_split(docs: List[Document]) -> List[Document]:
     """
     Split documents into smaller chunks for RAG retrieval.
+    Removes empty or invalid chunks.
     """
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
@@ -51,7 +84,23 @@ def text_split(docs: List[Document]) -> List[Document]:
     )
 
     text_chunks = text_splitter.split_documents(docs)
-    return text_chunks
+
+    clean_chunks: List[Document] = []
+
+    for chunk in text_chunks:
+        content = clean_text(chunk.page_content)
+
+        if not content:
+            continue
+
+        clean_chunks.append(
+            Document(
+                page_content=content,
+                metadata=chunk.metadata
+            )
+        )
+
+    return clean_chunks
 
 
 def add_chunk_ids(chunks: List[Document]) -> List[Document]:

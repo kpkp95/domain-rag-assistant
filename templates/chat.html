@@ -291,6 +291,31 @@
           });
         });
       });
+
+      $("#domainSelect").on("change", function () {
+        $.ajax({
+          type: "POST",
+          url: "/clear",
+        }).done(function () {
+          $("#messageFormeight").html(`
+      <div class="d-flex justify-content-start mb-4">
+        <div class="img_cont_msg">
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+            class="rounded-circle user_img_msg"
+            alt="Bot"
+          />
+        </div>
+
+        <div class="msg_cotainer">
+          Knowledge base changed. Conversation memory has been cleared.
+          Ask a question from the selected domain.
+          <span class="msg_time">Now</span>
+        </div>
+      </div>
+    `);
+        });
+      });
     </script>
   </body>
 </html>

@@ -13,11 +13,11 @@ from langchain.chains import (
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.chat_history import InMemoryChatMessageHistory
-from langchain_core.runnables.history import RunnableWithMessageHistory
 
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_community.chat_message_histories import RedisChatMessageHistory
 from src.helper import download_embeddings, format_source_documents
-from src.prompt import system_prompt
+from src.prompt import get_system_prompt
 
 
 app = Flask(__name__)
@@ -36,6 +36,8 @@ if not PINECONE_API_KEY:
 if not GOOGLE_API_KEY:
     raise ValueError("GOOGLE_API_KEY is missing from .env")
 
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CHAT_SESSION_TTL = int(os.getenv("CHAT_SESSION_TTL", 3600))
 
 INDEX_NAME = "domain-rag-assistant"
 
@@ -53,10 +55,6 @@ chat_model = ChatGoogleGenerativeAI(
 )
 
 
-# LangChain memory store
-chat_store = {}
-
-
 def get_session_id():
     """
     Create or return a unique session id for each browser session.
@@ -69,18 +67,20 @@ def get_session_id():
 
 def get_session_history(session_id: str):
     """
-    LangChain conversation memory.
-    Each session_id gets its own chat history.
+    LangChain Redis-backed conversation memory.
+    Each session_id gets its own chat history in Redis.
     """
-    if session_id not in chat_store:
-        chat_store[session_id] = InMemoryChatMessageHistory()
-
-    return chat_store[session_id]
+    return RedisChatMessageHistory(
+        session_id=session_id,
+        url=REDIS_URL,
+        ttl=CHAT_SESSION_TTL
+    )
 
 
 def build_rag_chain(selected_domain: str):
     """
-    Build a conversational RAG chain with LangChain memory.
+    Build a conversational RAG chain with domain-specific retrieval,
+    domain-specific prompt, and LangChain memory.
     """
 
     retriever = docsearch.as_retriever(
@@ -113,9 +113,11 @@ def build_rag_chain(selected_domain: str):
         contextualize_q_prompt
     )
 
+    domain_system_prompt = get_system_prompt(selected_domain)
+
     qa_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", system_prompt),
+            ("system", domain_system_prompt),
             MessagesPlaceholder("chat_history"),
             ("human", "{input}")
         ]
@@ -152,10 +154,14 @@ def chat():
     user_message = request.form.get("msg", "").strip()
     selected_domain = request.form.get("domain", "medical")
 
+    if selected_domain not in ["medical", "machine_learning", "llm"]:
+        selected_domain = "medical"
+
     if not user_message:
         return jsonify({
             "answer": "Please enter a question.",
-            "sources": []
+            "sources": [],
+            "domain": selected_domain
         })
 
     session_id = get_session_id()
@@ -175,27 +181,42 @@ def chat():
 
     answer = response.get("answer", "I could not generate an answer.")
     source_docs = response.get("context", [])
-    sources = format_source_documents(source_docs)
+
+    answer_lower = answer.lower()
+
+    no_source_phrases = [
+        "i do not know based on the provided medical documents",
+        "i do not know based on the provided machine learning documents",
+        "i do not know based on the provided llm documents",
+        "this question appears to be outside the selected medical domain",
+        "this question appears to be outside the selected machine learning domain",
+        "this question appears to be outside the selected llm domain",
+    ]
+
+    if any(phrase in answer_lower for phrase in no_source_phrases):
+        sources = []
+    else:
+        sources = format_source_documents(source_docs)
 
     return jsonify({
         "answer": answer,
-        "sources": sources
+        "sources": sources,
+        "domain": selected_domain
     })
-
 
 @app.route("/clear", methods=["POST"])
 def clear_chat():
     session_id = session.get("session_id")
 
-    if session_id and session_id in chat_store:
-        chat_store.pop(session_id)
+    if session_id:
+        history = get_session_history(session_id)
+        history.clear()
 
     session.pop("session_id", None)
 
     return jsonify({
         "status": "cleared"
     })
-
 
 if __name__ == "__main__":
     app.run(

@@ -27,7 +27,10 @@ data/**/*.csv
 data/**/*.json
 data/**/*.xlsx
 !data/**/.gitkeep
-
+store_index1.py
+src/helper1.py
+TEST.IPYNB
+test_setup.py
 # Model/vector database files
 *.pkl
 *.joblib

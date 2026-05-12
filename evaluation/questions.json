@@ -1,0 +1,88 @@
+[
+  {
+    "id": 1,
+    "domain": "medical",
+    "question": "What is acne?",
+    "expected_keywords": ["skin", "pores", "oil", "inflammation", "pimples"],
+    "should_have_sources": true
+  },
+  {
+    "id": 2,
+    "domain": "medical",
+    "question": "What are the symptoms of asthma?",
+    "expected_keywords": ["breathing", "wheezing", "cough", "airways"],
+    "should_have_sources": true
+  },
+  {
+    "id": 3,
+    "domain": "medical",
+    "question": "What is diabetes?",
+    "expected_keywords": ["blood", "sugar", "glucose", "insulin"],
+    "should_have_sources": true
+  },
+  {
+    "id": 4,
+    "domain": "medical",
+    "question": "What is gradient descent?",
+    "expected_keywords": ["outside", "medical", "domain"],
+    "should_have_sources": false
+  },
+
+  {
+    "id": 5,
+    "domain": "machine_learning",
+    "question": "What is gradient descent?",
+    "expected_keywords": ["loss", "gradient", "parameters", "learning rate"],
+    "should_have_sources": true
+  },
+  {
+    "id": 6,
+    "domain": "machine_learning",
+    "question": "What is overfitting?",
+    "expected_keywords": ["training", "test", "generalization", "model"],
+    "should_have_sources": true
+  },
+  {
+    "id": 7,
+    "domain": "machine_learning",
+    "question": "What is linear regression?",
+    "expected_keywords": ["linear", "prediction", "variable", "regression"],
+    "should_have_sources": true
+  },
+  {
+    "id": 8,
+    "domain": "machine_learning",
+    "question": "What is acne?",
+    "expected_keywords": ["outside", "machine learning", "domain"],
+    "should_have_sources": false
+  },
+
+  {
+    "id": 9,
+    "domain": "llm",
+    "question": "What is retrieval augmented generation?",
+    "expected_keywords": ["retrieval", "context", "generation", "documents"],
+    "should_have_sources": true
+  },
+  {
+    "id": 10,
+    "domain": "llm",
+    "question": "What is prompting?",
+    "expected_keywords": ["prompt", "instruction", "model", "response"],
+    "should_have_sources": true
+  },
+  {
+    "id": 11,
+    "domain": "llm",
+    "question": "What is a transformer?",
+    "expected_keywords": ["attention", "sequence", "model", "transformer"],
+    "should_have_sources": true
+  },
+  {
+    "id": 12,
+    "domain": "llm",
+    "question": "What is acne?",
+    "expected_keywords": ["outside", "llm", "domain"],
+    "should_have_sources": false
+  }
+]

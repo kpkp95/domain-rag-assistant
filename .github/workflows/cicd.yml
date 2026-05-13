@@ -73,6 +73,12 @@ jobs:
           docker stop domain-rag-assistant || true
           docker rm domain-rag-assistant || true
 
+      - name: Clean Docker cache
+        run: |
+          docker system prune -af || true
+          docker builder prune -af || true
+          rm -rf ~/actions-runner/_diag/* || true
+
       - name: Pull latest Docker image
         run: |
           docker pull "${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPO }}:latest"

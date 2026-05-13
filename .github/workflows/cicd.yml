@@ -54,10 +54,15 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Check disk space before deployment
+      - name: Check disk space
         run: |
           df -h
           docker system df || true
+
+      - name: Clean unused Docker images
+        run: |
+          docker image prune -af || true
+          docker builder prune -af || true
 
       - name: Create Docker network
         run: |
@@ -78,17 +83,6 @@ jobs:
         run: |
           docker stop domain-rag-assistant || true
           docker rm domain-rag-assistant || true
-
-      - name: Clean Docker cache
-        run: |
-          docker system prune -af || true
-          docker builder prune -af || true
-          rm -rf ~/actions-runner/_diag/* || true
-
-      - name: Check disk space after cleanup
-        run: |
-          df -h
-          docker system df || true
 
       - name: Pull latest Docker image
         run: |

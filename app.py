@@ -16,7 +16,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import RedisChatMessageHistory
-from src.helper import download_embeddings, format_source_documents
+from src.helper import download_embeddings, format_source_documents,is_greeting_or_small_talk
 from src.prompt import get_system_prompt
 
 
@@ -54,7 +54,46 @@ chat_model = ChatGoogleGenerativeAI(
     temperature=0.2
 )
 
+def get_greeting_response(selected_domain: str) -> str:
+    """
+    Return a friendly domain-aware greeting response.
+    """
+    domain_names = {
+        "medical": "Medical",
+        "machine_learning": "Machine Learning",
+        "llm": "LLM"
+    }
 
+    examples = {
+        "medical": [
+            "What is acne?",
+            "What are the symptoms of asthma?",
+            "What is diabetes?"
+        ],
+        "machine_learning": [
+            "What is gradient descent?",
+            "What is overfitting?",
+            "What is linear regression?"
+        ],
+        "llm": [
+            "What is RAG?",
+            "What is prompting?",
+            "What is a transformer?"
+        ]
+    }
+
+    domain_label = domain_names.get(selected_domain, "selected")
+    domain_examples = examples.get(selected_domain, [])
+
+    example_text = "\n".join([f"- {example}" for example in domain_examples])
+
+    return (
+        f"Hello! I am your Domain RAG Assistant.\n\n"
+        f"You are currently using the {domain_label} knowledge base.\n\n"
+        f"You can ask questions like:\n"
+        f"{example_text}\n\n"
+        f"I will answer using the selected documents and show sources when relevant."
+    )
 def get_session_id():
     """
     Create or return a unique session id for each browser session.
@@ -163,6 +202,12 @@ def chat():
             "sources": [],
             "domain": selected_domain
         })
+    if is_greeting_or_small_talk(user_message):
+        return jsonify({
+        "answer": get_greeting_response(selected_domain),
+        "sources": [],
+        "domain": selected_domain
+    })
 
     session_id = get_session_id()
 

@@ -59,7 +59,7 @@
             <div class="domain-bar">
               <label for="domainSelect">Knowledge Base:</label>
               <select id="domainSelect" class="form-control form-control-sm">
-                <option value="medical" selected>Medical</option>
+                <option value="medical">Medical</option>
                 <option value="machine_learning">Machine Learning</option>
                 <option value="llm">LLM</option>
               </select>
@@ -85,9 +85,16 @@
                 </div>
 
                 <div class="msg_cotainer">
-                  Hello! I can answer questions using your selected document
-                  knowledge base. Ask me something like: <br />
-                  <strong>“What is acne?”</strong>
+                  Hello! I am your Domain RAG Assistant. Choose a knowledge base
+                  above and ask a document-based question.
+                  <br /><br />
+                  Examples:
+                  <br />
+                  <strong>Medical:</strong> “What is acne?”
+                  <br />
+                  <strong>Machine Learning:</strong> “What is gradient descent?”
+                  <br />
+                  <strong>LLM:</strong> “What is RAG?”
                   <span class="msg_time">Now</span>
                 </div>
               </div>
@@ -127,6 +134,16 @@
 
     <script>
       $(document).ready(function () {
+        const validDomains = ["medical", "machine_learning", "llm"];
+        const savedDomain = localStorage.getItem("selectedDomain");
+
+        if (savedDomain && validDomains.includes(savedDomain)) {
+          $("#domainSelect").val(savedDomain);
+        } else {
+          $("#domainSelect").val("medical");
+          localStorage.setItem("selectedDomain", "medical");
+        }
+
         function getCurrentTime() {
           const date = new Date();
           let hour = date.getHours();
@@ -148,6 +165,28 @@
           return $("<div>").text(text).html();
         }
 
+        function showDomainChangedMessage() {
+          $("#messageFormeight").html(`
+            <div class="d-flex justify-content-start mb-4">
+              <div class="img_cont_msg">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+                  class="rounded-circle user_img_msg"
+                  alt="Bot"
+                />
+              </div>
+
+              <div class="msg_cotainer">
+                Knowledge base changed. Conversation memory has been cleared.
+                Ask a question from the selected domain.
+                <span class="msg_time">Now</span>
+              </div>
+            </div>
+          `);
+
+          scrollToBottom();
+        }
+
         $("#messageArea").on("submit", function (event) {
           event.preventDefault();
 
@@ -162,40 +201,40 @@
           const safeUserText = escapeHtml(rawText);
 
           const userHtml = `
-                    <div class="d-flex justify-content-end mb-4">
-                        <div class="msg_cotainer_send">
-                            ${safeUserText}
-                            <span class="msg_time_send">${str_time}</span>
-                        </div>
-                        <div class="img_cont_msg">
-                            <img
-                                src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                                class="rounded-circle user_img_msg"
-                                alt="User"
-                            >
-                        </div>
-                    </div>
-                `;
+            <div class="d-flex justify-content-end mb-4">
+              <div class="msg_cotainer_send">
+                ${safeUserText}
+                <span class="msg_time_send">${str_time}</span>
+              </div>
+              <div class="img_cont_msg">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                  class="rounded-circle user_img_msg"
+                  alt="User"
+                >
+              </div>
+            </div>
+          `;
 
           $("#text").val("");
           $("#messageFormeight").append(userHtml);
           scrollToBottom();
 
           const loadingHtml = `
-                    <div id="loadingMessage" class="d-flex justify-content-start mb-4">
-                        <div class="img_cont_msg">
-                            <img
-                                src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
-                                class="rounded-circle user_img_msg"
-                                alt="Bot"
-                            >
-                        </div>
-                        <div class="msg_cotainer">
-                            Thinking...
-                            <span class="msg_time">${str_time}</span>
-                        </div>
-                    </div>
-                `;
+            <div id="loadingMessage" class="d-flex justify-content-start mb-4">
+              <div class="img_cont_msg">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+                  class="rounded-circle user_img_msg"
+                  alt="Bot"
+                >
+              </div>
+              <div class="msg_cotainer">
+                Thinking...
+                <span class="msg_time">${str_time}</span>
+              </div>
+            </div>
+          `;
 
           $("#messageFormeight").append(loadingHtml);
           scrollToBottom();
@@ -222,12 +261,12 @@
 
                   data.sources.forEach(function (source) {
                     sourcesHtml += `
-                                    <li>
-                                        ${escapeHtml(source.source)}
-                                        — page ${source.page}
-                                        — chunk ${source.chunk_id}
-                                    </li>
-                                `;
+                      <li>
+                        ${escapeHtml(source.source)}
+                        — page ${source.page}
+                        — chunk ${source.chunk_id}
+                      </li>
+                    `;
                   });
 
                   sourcesHtml += `</ul></div>`;
@@ -239,21 +278,21 @@
               const safeAnswer = escapeHtml(answer).replace(/\n/g, "<br>");
 
               const botHtml = `
-                        <div class="d-flex justify-content-start mb-4">
-                            <div class="img_cont_msg">
-                                <img
-                                    src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
-                                    class="rounded-circle user_img_msg"
-                                    alt="Bot"
-                                >
-                            </div>
-                            <div class="msg_cotainer">
-                                ${safeAnswer}
-                                ${sourcesHtml}
-                                <span class="msg_time">${str_time}</span>
-                            </div>
-                        </div>
-                    `;
+                <div class="d-flex justify-content-start mb-4">
+                  <div class="img_cont_msg">
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+                      class="rounded-circle user_img_msg"
+                      alt="Bot"
+                    >
+                  </div>
+                  <div class="msg_cotainer">
+                    ${safeAnswer}
+                    ${sourcesHtml}
+                    <span class="msg_time">${str_time}</span>
+                  </div>
+                </div>
+              `;
 
               $("#messageFormeight").append(botHtml);
               scrollToBottom();
@@ -262,20 +301,20 @@
               $("#loadingMessage").remove();
 
               const errorHtml = `
-                        <div class="d-flex justify-content-start mb-4">
-                            <div class="img_cont_msg">
-                                <img
-                                    src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
-                                    class="rounded-circle user_img_msg"
-                                    alt="Bot"
-                                >
-                            </div>
-                            <div class="msg_cotainer error_msg">
-                                Sorry, something went wrong. Please try again.
-                                <span class="msg_time">${str_time}</span>
-                            </div>
-                        </div>
-                    `;
+                <div class="d-flex justify-content-start mb-4">
+                  <div class="img_cont_msg">
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+                      class="rounded-circle user_img_msg"
+                      alt="Bot"
+                    >
+                  </div>
+                  <div class="msg_cotainer error_msg">
+                    Sorry, something went wrong. Please try again.
+                    <span class="msg_time">${str_time}</span>
+                  </div>
+                </div>
+              `;
 
               $("#messageFormeight").append(errorHtml);
               scrollToBottom();
@@ -290,30 +329,18 @@
             $("#messageFormeight").html("");
           });
         });
-      });
 
-      $("#domainSelect").on("change", function () {
-        $.ajax({
-          type: "POST",
-          url: "/clear",
-        }).done(function () {
-          $("#messageFormeight").html(`
-      <div class="d-flex justify-content-start mb-4">
-        <div class="img_cont_msg">
-          <img
-            src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
-            class="rounded-circle user_img_msg"
-            alt="Bot"
-          />
-        </div>
+        $("#domainSelect").on("change", function () {
+          const selectedDomain = $(this).val();
 
-        <div class="msg_cotainer">
-          Knowledge base changed. Conversation memory has been cleared.
-          Ask a question from the selected domain.
-          <span class="msg_time">Now</span>
-        </div>
-      </div>
-    `);
+          localStorage.setItem("selectedDomain", selectedDomain);
+
+          $.ajax({
+            type: "POST",
+            url: "/clear",
+          }).done(function () {
+            showDomainChangedMessage();
+          });
         });
       });
     </script>

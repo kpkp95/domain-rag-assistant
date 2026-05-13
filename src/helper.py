@@ -159,3 +159,30 @@ def format_source_documents(docs: List[Document]) -> List[dict]:
             )
 
     return sources
+
+
+def is_greeting_or_small_talk(message: str) -> bool:
+    """
+    Detect simple greetings or small talk so we do not send them to RAG.
+    """
+    message = message.lower().strip()
+
+    greetings = [
+        "hi",
+        "hello",
+        "hey",
+        "hii",
+        "hy",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "how are you",
+        "who are you",
+        "what can you do",
+        "help",
+        "start"
+    ]
+
+    return message in greetings
+
+

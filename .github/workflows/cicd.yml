@@ -3,7 +3,10 @@ name: Deploy Domain RAG Assistant to EC2
 on:
   push:
     branches: [main]
-
+    paths-ignore:
+      - "screenshots/**"
+      - "README.md"
+      - "*.md"
 jobs:
   Continuous-Integration:
     name: Build and Push Docker Image to ECR

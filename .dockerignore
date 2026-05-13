@@ -19,7 +19,7 @@ env/
 ENV/
 medbot/
 mediChatbot/
-
+screenshots
 # Jupyter / research files
 .ipynb_checkpoints/
 research/
